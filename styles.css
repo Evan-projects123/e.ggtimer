@@ -1,11 +1,11 @@
 @font-face {
     font-family: 'Digital';
-    src: url('../fonts/DSEG14Modern-Italic.woff2') format('woff2');
+    src: url('./fonts/DSEG14Modern-Italic.woff2') format('woff2');
 }
 
 @font-face {
     font-family: 'HelveticaNeue';
-    src: url('../fonts/HelveticaNeue-Medium.woff2') format('woff2');
+    src: url('./fonts/HelveticaNeue-Medium.woff2') format('woff2');
 }
 
 body {
