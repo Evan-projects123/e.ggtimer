@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="timer-container">
+        <div id="error-console" style="display: none; font-family: 'Digital', sans-serif; color: #ff0000; margin-bottom: 0.5rem; text-align: center;"></div>
+        <h1 id="label"></h1>
+        <div id="display">00:00:00</div>
+        <div id="address-display"></div>
+    </div>
+
+    <!-- ms-digit=4 Performance Warning Modal (No emojis, matches error font) -->
+    <div id="performance-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; font-family: inherit;">
+        <div style="background-color: #1a1a1a; border: 2px solid #ff3333; border-radius: 10px; max-width: 500px; width: 90%; padding: 2rem; text-align: center; box-shadow: 0 0 40px rgba(255,0,0,0.3);">
+            <h2 style="color: #ff3333; margin-top: 0; text-transform: uppercase;">High Performance Warning</h2>
+            <p style="color: #fff; font-size: 1.1rem; line-height: 1.5; margin-bottom: 1.5rem;">
+                You have set <code style="background: #2a2a2a; padding: 0.2rem 0.4rem; border-radius: 4px; color: #ff3333;">ms-digit=4</code>. 
+                This forces the timer to update <strong>1,000 times every second</strong>.
+            </p>
+            <div style="background: #2a2a2a; border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; text-align: left; color: #aaa;">
+                <p style="margin: 0 0 0.5rem 0;"><strong style="color: #fff;">Potential issues:</strong></p>
+                <ul style="margin: 0; padding-left: 1.2rem;">
+                    <li style="margin: 0.3rem 0;">Significantly increased CPU usage</li>
+                    <li style="margin: 0.3rem 0;">Rapid battery drain on mobile devices</li>
+                    <li style="margin: 0.3rem 0;">Possible UI stuttering on low-end hardware</li>
+                </ul>
+            </div>
+            <p style="color: #fff; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                <strong>Recommendation:</strong> Use <code style="background: #2a2a2a; padding: 0.2rem 0.4rem; border-radius: 4px; color: #39FF14;">ms-digit=3</code> for a smooth 1,000 Hz update with significantly less overhead.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button id="modal-proceed" style="background-color: #ff3333; color: #fff; border: none; padding: 0.8rem 2rem; font-size: 1rem; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background-color 0.2s;">Proceed Anyway</button>
+                <button id="modal-cancel" style="background-color: #555; color: #fff; border: none; padding: 0.8rem 2rem; font-size: 1rem; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">Cancel (Use 3)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-screen" style="display: none;">
+        <h2>Timer URL Documentation & User Guide</h2>
+        <p class="help-intro">This application reads configuration rules directly from your browser's address bar. You can mix and match parameters using URL queries (<code>?</code>) and ampersands (<code>&</code>).</p>
+        
+        <hr>
+
+        <div class="help-section">
+            <h3>1. Relative Countdown Timers (Shorthand)</h3>
+            <p>Enter a number followed by time units to start a quick countdown from the moment the page loads.</p>
+            <ul>
+                <li><strong>Supported Units:</strong> <code>h</code> (hours), <code>m</code> (minutes), <code>s</code> (seconds).</li>
+                <li><strong>Format Example:</strong> <code>index.html?1h30m15s</code> sets a timer for 1 hour, 30 minutes, and 15 seconds.</li>
+                <li><strong>Pure Minute Fallback:</strong> If you pass a single raw number without units (e.g., <code>index.html?45</code>), the application automatically treats it as minutes (45 minutes).</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>2. Absolute Target Timers (Specific Time / Date)</h3>
+            <p>You can target specific milestones. The application automatically calculates the remaining duration.</p>
+            <ul>
+                <li><strong>Time Only (24-Hour Clock):</strong> <code>index.html?15:30</code> targets 3:30 PM. If that time has already passed today, it automatically schedules the countdown for 3:30 PM <em>tomorrow</em>.</li>
+                <li><strong>Date Only (Midnight Target):</strong> <code>index.html?2026-12-25</code> targets 12:00 AM on Christmas Day, 2026.</li>
+                <li><strong>Exact Date & Time Combo:</strong> <code>index.html?2026-05-07&14:00</code> targets exactly 2:00 PM on May 7th, 2026.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>3. Adding Labels</h3>
+            <p>Give your countdown context by displaying a custom header above the clock ticking down.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>label=Your+Text</code></li>
+                <li><strong>Example:</strong> <code>index.html?20m&label=Pizza+Time</code> displays "PIZZA TIME" in clean, bold lettering above a 20-minute timer.</li>
+                <li>Select punctuation for labels is <i>not supported.</i></li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>4. Display Customization (Font Toggling)</h3>
+            <p>Control the typeface layout of this information screen using the <code>font</code> modifier parameter.</p>
+            <ul>
+                <li><code>font=1</code>: Renders the documentation text in the retro <strong>DSEG14 Modern Italic (Digital)</strong> font.</li>
+                <li><code>font=2</code>: Renders the documentation text in the clean, modern <strong>Helvetica Neue Medium</strong> font.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>5. Color Customization (Text)</h3>
+            <p>Change the glowing text color of your timer by passing a standard 6-character hex code or HTML color name.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>color=HEX_OR_NAME</code></li>
+                <li><strong>Examples:</strong> <code>index.html?10m&color=ff0055</code> (Neon Pink) or <code>index.html?5m&color=cyan</code></li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>6. Background Color Customization</h3>
+            <p>Change the background color of the timer page by passing a standard 6-character hex code, 3-character hex code, or HTML color name.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>bg=HEX_OR_NAME</code></li>
+                <li><strong>Examples:</strong> <code>index.html?10m&bg=112233</code> (Dark blue) or <code>index.html?5m&bg=black</code></li>
+                <li><strong>Strict Validation:</strong> If you pass an invalid color string (e.g., <code>bg=banana</code> or <code>bg=#GGGGGG</code>), the timer will <strong>explicitly fail</strong> with a red error message telling you exactly what went wrong. The app will not silently fallback to the default black.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>7. Error Diagnostics Console</h3>
+            <p>If any validation errors are detected, the timer will display a comprehensive error console above the timer face.</p>
+            <ul>
+                <li><strong>Multiple Errors:</strong> All errors are collected and displayed as a numbered list.</li>
+                <li><strong>Error Header:</strong> Shows <code>1 ERROR WAS FOUND</code> or <code>X ERRORS WERE FOUND</code>.</li>
+                <li><strong>Color Coding:</strong> Errors are displayed in <strong>bright red</strong>. The timer text and label remain in your chosen color (default green).</li>
+                <li><strong>Auto-Shrink:</strong> If the error list is long, the text automatically shrinks to fit the screen, pushing the timer down.</li>
+                <li><strong>Calendar Accuracy:</strong> Dates are validated against the actual Gregorian calendar. <code>2026-04-31</code> will explicitly fail with a human-readable error.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>8. Millisecond Precision Display</h3>
+            <p>Add live millisecond precision to your countdown by passing the <code>ms-digit</code> parameter. This will append a decimal point and the specified number of digits to your timer.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>ms-digit=INTEGER</code> (Acceptable values: <code>0</code> through <code>4</code>)</li>
+                <li><strong>Example:</strong> <code>index.html?10m&ms-digit=3</code> displays <code>09:59:59.123</code> (with 3 digits of milliseconds).</li>
+                <li><strong>Strict Validation:</strong> If you provide a number outside the 0–4 range (e.g., <code>ms-digit=5</code> or <code>ms-digit=-1</code>), the timer will <strong>explicitly fail</strong> with a red error message telling you exactly what went wrong. The app will not silently fallback to 0.</li>
+                <li><strong>ms-digit=4 Warning:</strong> Setting <code>ms-digit=4</code> forces the timer to update 1,000 times per second. The app will pause and show a confirmation modal warning about high CPU usage and battery drain before proceeding.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>9. Single-Unit Display Mode</h3>
+            <p>Instead of the traditional <code>HH:MM:SS</code> format, you can force the timer to count down exclusively in <strong>one specific unit</strong> (e.g., just seconds, or just years). </p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>unit=STRING</code></li>
+                <li><strong>Supported Units:</strong> <code>ms</code>, <code>seconds</code>, <code>minutes</code>, <code>hours</code>, <code>days</code>, <code>weeks</code>, <code>months</code>, <code>years</code></li>
+                <li><strong>Example:</strong> <code>index.html?1h&unit=seconds</code> displays <code>3600.000</code> (counting down in seconds).</li>
+                <li><strong>Decimal Clipping:</strong> To round the decimal, pass <code>clip=INTEGER</code>. If the clip amount is larger than the decimal, the extra zeros are quietly trimmed (e.g., <code>clip=4</code> on <code>12.5</code> becomes <code>12.5</code>, not <code>12.5000</code>).</li>
+                <li><strong>Error Handling:</strong> If an unsupported unit is passed (e.g., <code>unit=centuries</code>), the timer will fail with a red error message.</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>10. Auto-Shrink Mode</h3>
+            <p>If your timer displays a very large number (e.g., counting down in <code>ms</code> from 10 days), it might overflow the screen. You can opt-in to an auto-shrink feature.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>autoshrink=true</code></li>
+                <li><strong>Behavior:</strong> When enabled, the font size will dynamically shrink as the number gets longer, ensuring it always fits within the screen boundaries. When disabled, the font stays at maximum size even if it gets clipped.</li>
+                <li><strong>Default:</strong> <code>autoshrink=false</code> (Font stays large, and may overflow the screen).</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>11. Mouse Hide Mode</h3>
+            <p>For a distraction-free, presentation-style timer, you can automatically hide the mouse cursor after a brief period of inactivity.</p>
+            <ul>
+                <li><strong>Parameter:</strong> <code>mouse-hide=true</code></li>
+                <li><strong>Behavior:</strong> The mouse cursor will fade away after <strong>0.5 seconds</strong> of no movement. It will instantly reappear the moment you move your mouse again.</li>
+                <li><strong>Default:</strong> <code>mouse-hide=false</code> (Mouse cursor is always visible).</li>
+            </ul>
+        </div>
+
+        <div class="help-section">
+            <h3>12. Custom Font Upload</h3>
+            <p>Upload your own font file to use for the timer display and label. The font will be applied instantly in the preview.</p>
+            <ul>
+                <li><strong>Supported formats:</strong> <code>.woff2</code>, <code>.woff</code>, <code>.ttf</code>, <code>.otf</code></li>
+                <li><strong>How it works:</strong> Upload any font file, and it will replace the timer display font</li>
+                <li><strong>Note:</strong> The font is applied locally and will persist during your session</li>
+            </ul>
+            
+            <div id="font-upload-container" style="margin-top: 1rem;">
+                <input type="file" id="font-upload" accept=".woff2,.woff,.ttf,.otf" style="display: none;">
+                <button id="btn-upload-font" style="background-color: #39FF14; color: #000; border: none; padding: 0.7rem 1.5rem; font-weight: bold; font-size: 0.9rem; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease;">📁 UPLOAD CUSTOM FONT</button>
+                <span id="font-status" style="margin-left: 1rem; font-size: 0.9rem; opacity: 0.7;">No custom font loaded</span>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h3>🎛️ Visual Timer Setup Builder</h3>
+            <p>Fill out the fields below to create your timer config. Leaving both the Target Date and Target Time completely blank will mark those boxes red, requiring at least one timing component to launch.</p>
+            
+            <div id="preview-container" style="margin-top: 1.5rem; margin-bottom: 1rem; padding: 2rem 1rem; border: 1px dashed rgba(255,255,255,0.15); border-radius: 6px; text-align: center; background-color: #1a1a1a; transition: background-color 0.2s ease;">
+                <div id="preview-error-console" style="font-family: 'Digital', sans-serif; color: #ff0000; margin-bottom: 0.5rem; min-height: 1.5rem; display: none;"></div>
+                <h3 id="preview-label" style="margin: 0 0 1rem 0; font-family: 'Digital', sans-serif; font-size: 2rem; text-transform: uppercase; min-height: 2.3rem;"></h3>
+                <div id="preview-display" style="font-family: 'Digital', sans-serif; font-size: clamp(3.5rem, 12vw, 6rem); white-space: nowrap;">00:00:00</div>
+            </div>
+
+            <div id="builder-panel">
+                <div class="control-box" id="box-date">
+                    <label for="input-date">Target Date</label>
+                    <input type="date" id="input-date">
+                </div>
+                
+                <div class="control-box" id="box-time">
+                    <label for="input-time">Target Time</label>
+                    <input type="time" id="input-time">
+                </div>
+                
+                <div class="control-box" id="box-label">
+                    <label for="input-label">Timer Label</label>
+                    <input type="text" id="input-label" placeholder="e.g. Baking Pizza">
+                </div>
+                
+                <div class="control-box" id="box-color">
+                    <label for="input-color">Text Color</label>
+                    <input type="color" id="input-color" value="#39FF14">
+                </div>
+
+                <div class="control-box" id="box-bgcolor">
+                    <label for="input-bgcolor">Background Color</label>
+                    <input type="color" id="input-bgcolor" value="#1a1a1a">
+                </div>
+
+                <div class="control-box" id="box-msdigit">
+                    <label for="input-msdigit">Millisecond Digits</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="range" id="input-msdigit" min="0" max="4" value="0" step="1" style="flex: 1;">
+                        <span id="msdigit-value" style="font-family: 'Digital', sans-serif; font-size: 1.2rem; min-width: 1.5rem; text-align: center;">0</span>
+                    </div>
+                </div>
+
+                <div class="control-box" id="box-unit">
+                    <label for="input-unit">Display Unit</label>
+                    <select id="input-unit" style="background-color: #111; border: 1px solid #555; color: #fff; padding: 0.4rem; border-radius: 4px; font-size: 0.9rem; outline: none;">
+                        <option value="">Standard (HH:MM:SS)</option>
+                        <option value="ms">Milliseconds</option>
+                        <option value="seconds">Seconds</option>
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                    </select>
+                </div>
+
+                <div class="control-box" id="box-clip">
+                    <label for="input-clip">Decimal Clip</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="range" id="input-clip" min="0" max="10" value="0" step="1" style="flex: 1;">
+                        <span id="clip-value" style="font-family: 'Digital', sans-serif; font-size: 1.2rem; min-width: 1.5rem; text-align: center;">0</span>
+                    </div>
+                </div>
+
+                <div class="control-box" id="box-autoshrink">
+                    <label for="input-autoshrink">Auto-Shrink Text?</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="range" id="input-autoshrink" min="0" max="1" value="0" step="1" style="flex: 1;">
+                        <span id="autoshrink-value" style="font-family: 'Digital', sans-serif; font-size: 1.2rem; min-width: 1.5rem; text-align: center;">OFF</span>
+                    </div>
+                </div>
+
+                <div class="control-box" id="box-mousehide">
+                    <label for="input-mousehide">Hide Mouse Cursor?</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="range" id="input-mousehide" min="0" max="1" value="0" step="1" style="flex: 1;">
+                        <span id="mousehide-value" style="font-family: 'Digital', sans-serif; font-size: 1.2rem; min-width: 1.5rem; text-align: center;">OFF</span>
+                    </div>
+                </div>
+                
+                <div class="control-box action-box">
+                    <button type="button" id="btn-launch">LAUNCH 🚀</button>
+                </div>
+            </div>
+        </div>
+        
+        <p class="help-footer">💡 <em>System Note: The <code>help=true</code> flag overrides all active timer functions. To return to timer mode, simply remove <code>help=true</code> from your address bar.</em></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
